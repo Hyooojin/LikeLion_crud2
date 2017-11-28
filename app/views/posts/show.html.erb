@@ -1,0 +1,77 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Title:</strong>
+  <%= @post.title %>
+</p>
+
+<p>
+  <strong>Content:</strong>
+  <%= @post.content %>
+</p>
+
+<%=form_tag create_comment_to_post_path, id: "comment" do%>
+  <%=text_field_tag :body %>
+  <%=submit_tag "댓글쓰기"%>
+<% end %>
+
+
+<%= link_to 'Edit', edit_post_path(@post) %> |
+<%= link_to 'Back', posts_path %> |
+<%= link_to "좋아요", like_post_to_post_path, id: "like_button" %>
+
+
+<table class="table", id="comment_table">
+  <thead>
+    <tr>
+      <td>댓글</td>
+    </tr>
+  </thead>
+  
+  <tbody>
+    <% @post.comments.reverse.each do |p| %>
+    <tr>
+      <td><%=p.body %></td>
+    </tr>
+    <% end %>
+  </tbody>
+  
+  <tfoot>
+    <tr>
+      <td>* 악성 댓글 주의 *</td>
+    </tr>
+  </tfoot>
+</table>
+
+
+<script>
+  $(function() {
+    
+    $('#like_button').on('click', function(e) {
+      e.preventDefault();
+      console.log("Like Button Clicked");
+      $.ajax({
+        method: "POST",
+        url: "<%=like_post_to_post_path %>"
+      })
+    })
+    
+    
+    
+    var form = $('#comment');
+    console.log(form);
+    form.on('submit', function(e) {
+      console.log("haha");
+      e.preventDefault();
+      
+      var contents = $('#body').val();
+      console.log(contents);
+      $.ajax({
+        url: "<%=create_comment_to_post_path%>",
+        method: "POST",
+        data: {body: contents}
+      })
+    });
+  })
+  
+</script>
