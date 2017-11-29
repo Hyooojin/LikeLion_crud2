@@ -84,7 +84,7 @@ class PostsController < ApplicationController
         @result = current_user.likes.create(post_id: @post.id)
         puts "좋아요"
       else
-        @result = current_user.likes.find(post_id: @post_id).destroy
+        @result = current_user.likes.find_by(post_id: @post.id).destroy
         puts "좋아요 취소"
       end
       puts "test"
