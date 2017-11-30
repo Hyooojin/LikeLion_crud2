@@ -88,6 +88,7 @@ class PostsController < ApplicationController
         puts "좋아요 취소"
       end
       puts "test"
+      puts @result.frozen?
       puts @result
     end
   end
