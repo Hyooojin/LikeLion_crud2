@@ -99,6 +99,8 @@ root 'posts#index'
 
 # 댓글달기 기능
 
+댓글을 ajax로 구현하기
+
 ## 1. 댓글달기 기능 기본 설정
 
 ### 1. 댓글을 달 수 있는 veiw 설정, form_tag로 comment를 달 수 있는 창 만들기.
@@ -196,6 +198,9 @@ Completed 500 Internal Server Error in 3ms (ActiveRecord: 0.0ms)
 
 4. e.preventDefault <br>
 e.preventDefault를 하지 않으면, action에 의해 다음 page로 넘어가는데, 다음 page로 넘어가지 않게 한다.
+<br>
+sumit이 성공하면, 해당요청을 중지시키고, ajax방법을 써서 post방식으로 요청을 보낸다. 
+
   <br>
   <br>
 
@@ -228,8 +233,15 @@ ajax는 page의 과부하를 주지않고, 작성할 수 있게 해준다.
 <br>
 
 ## 3. ajax 기본
+ajax로 구현하기 위해서는 기본적으로 4가지가 필요하다. 
+<br>
+* **라우팅**
+* **리모트 true**
+* **해당 method javascript파일**
+* **플래그 사용? (.frozen이 하나의 기준이 된다.)**
+<br>
 
-ajax를 처음 접한 사람이라면, 수도코드를 작성하고 코드를 짜나가는 것을 추천한다고 한다. 
+ajax를 처음 접한 사람이라면, 수도코드를 작성하고 코드를 짜는 것이 좋다. 
 <br>
 
 ### Q1. 댓글 달기 + ajax로 구현하기
@@ -239,8 +251,9 @@ ajax를 처음 접한 사람이라면, 수도코드를 작성하고 코드를 �
 * (1) input태그에 있는 값을 가져온다. 
 * (2) 값이 유효한지 확인한다. (빈칸인지 아닌지)
 * (3) 값이 없으면 값을 넣으라는 안내메시지를 뿌린다. 
-2. ajax로 처리한다. 
-	
+2. 값이 있을 경우, ajax로 처리한다. 
+* (1) 현재 글은 어디인지, 작성자는 누구인지 파악한다.
+* (2) DB에 댓글을 저장한다.
 3. 서버에서 처리가 완료되면 화면에 댓글을 출력한다. 
 
 ### 1. 서버와의 통신
@@ -341,7 +354,8 @@ before_action :set_post, only: [:show, :edit, :update, :destroy, :create_comment
 ### 4. javascript에서 페이지 넘기기
 
 로그인 한 유저만이 댓글을 쓰도록 하고 싶다. 따라서 로그인 안 한 유저는 로그인 페이지로 보낸다.
-
+<br>
+기본적으로 액션과 이름이 같은 javascript파일을 랜딩한다. 
 ```ruby
   def create_comment
     unless user_signed_in?
@@ -450,12 +464,12 @@ append | prepend <br>
 
 ### Q3. 좋아요 버튼 + ajax구현
 1. 좋아요 버튼을 누른다. 
-2. 버튼을 누른경우
-* (1) 기존에 좋아요를 이미 누른 경우
-* (2) 기존에 좋아요를 누르지 않은 경우
-3. 이미 누른 경우
+2. 기존에 버튼을 누른경우
 * (1) 좋아요 삭제
-* (2) 
+* (2) 버튼을 like로 변경
+3. 처음 누른 경우
+* (1) 좋아요 등록
+* (2) 버튼을 dislike로 변경
 <br>
 
 **jQuery 여러 사용법**
@@ -475,16 +489,43 @@ $(document).on('eventName', 'css selector', function(){
 **[좋아요 버튼 만들기: show.erb]**
 
 ```html
-<%=link_to 'Like', like_to_post_path, class: "btn btn-info", id: "like_button" %>
+<%=link_to 'Like', like_post_to_post_path, class: "btn btn-info", id: "like_button" %>
 ```
+url을 설정해 주기 위해서는 routing 설정이 필요! 
 <br>
 
 **[like_to의 prefix 설정: routes.rb]**
 
 ```ruby
- post '/like_post' => 'posts#like_post', as: 'like_to'
+ post '/like_post' => 'posts#like_post', as: 'like_post_to'
 ```
 <br>
+
+## 2. 좋아요 기능 javascript 사용
+
+### 1. 좋아요를 누르는 view 설정
+
+**[좋아요 이벤트 발생: show.erb]**
+<br>
+ajax로 e.prevent 랑 console창 확인하면서 구현
+
+
+### 2. 좋아요 event를 발생시킨다.
+
+```javascript
+ $(function() {
+    $('#like_button').on('click', function(e) {
+      e.preventDefault();
+      console.log("Like Button Clicked");
+    })
+```
+좋아요 버튼을 누르면, 콘솔창에 Like Bitton Clicked가 나타나는 것을 확인할 수 있다.<br> 
+단, server의 콘솔창에서는 이벤트가 발생했다는 것을 알 수 없다. console창에서만 확인 가능! 
+<br>
+
+## 3.ajax 좋아요 이벤트 server와 연결
+
+### 1. controller를 설정해준다.
 
 **[컨트롤러 설정: posts_controller.rb]**
 
@@ -493,16 +534,50 @@ $(document).on('eventName', 'css selector', function(){
     puts "Like Post Success"
   end
 ```
-### 3. 좋아요 모델 만들기
 
+### 2. ajax를 사용해 server와도 연결
+
+**[이벤트 처리: show.erb]**
+
+```js
+ $.ajax({
+        method: "POST",
+        url: "<%=like_post_to_post_path%>"
+      })
+```
+Server 콘솔창에 Like Post Sucess가 뜨는 것을 확인할 수 있다. <br>
+즉, 이벤트 발생이 우리 server에도 전달된다는 것.
+<br>
+ActionView::MissingTemplate
+
+<br>
+### 3. missing template 처리
+
+**[새로만들기: like_post.js.erb]**
+
+```js
+alert("좋아요를 눌렀습니다.")
+```
+
+<br>
+## 4.좋아요에 대한 정보를Database에 저장한다. 
+좋아요 / 좋아요 취소를 나타낼 수 있다. 
+<br>
+DB에도 해당 유저가 해당 post에 대해새 좋아요를 눌렀는가에 대한 data를 저장하려고 한다. 
+
+<br>
+### 1. 좋아요 모델 만들기
+좋아요 정보는 어떤 유저가 어떤 post에 좋아요를 눌렀는지 저장하기 위함이기때문에 유저정보와 post정보를 지녀야 한다. 
+
+<br>
 **[Like 모델 만들기]**
 
 ```ruby
 $ rails g model Like user:references post:references
 ```
-<br>
 
-### 4. 모델의 관계 설정
+<br>
+### 2. 모델의 관계 설정
 
 ```ruby
 # references로 like.rb에는 belong_to가 생성되어 있다. 
@@ -515,85 +590,154 @@ has_many :likes
 ```
 <br>
 
+### 3. 좋아요 누르기 상황 설정
+어떤 상황에 Database에 정보를 쌓을지를 지정한다. 
 
-### 5. event 설정
-
-**[좋아요 이벤트 발생: show.erb]**
 <br>
-ajax로 e.prevent 랑 console창 확인하면서 구현
-
-```javascript
- $(function() {
-    $('#like_button').on('click', function(e) {
-      e.preventDefault();
-      console.log("Like Button Clicked");
-    })
-```
-<br>
-
-### 6. ajax를 이용해 event 처리
-
-**[이벤트 처리: show.erb]**
-
-```js
- $.ajax({
-        method: "POST",
-        url: "<%=like_to_post_path%>"
-      })
-```
-ActionView::MissingTemplate
-
-### 7. missing template 처리
-
-**[새로만들기: like_post.js.erb]**
-
-```js
-alert("좋아요를 눌렀습니다.")
-```
-
-### 8. 좋아요 누르기 상황 설정
-
 **[상황 설정: posts_controller.rb]**
 
 ```ruby
-  before_action :set_post, only: [:show, :edit, :update, :destroy, :create_comment, :like_post]
+before_action :set_post, only: [:show, :edit, :update, :destroy, :create_comment, :like_post]
+
+
+def like_post
+	puts "Like Post Scess"
+	
+	if Like.where(user_id: current_user_id, post_id: @post.id).first.nii?
+		@result = current_user.likes.create(post_id: @post.id)
+		puts "좋아요"
+	else
+		@result = current_user.likes.find_by(post_id: @post.id).destroy
+		puts "좋아요 취소"
+	end
+	puts "test"
+	puts @result
+end
  
-  def like_post
-    # puts "Like Post Success"
-    unless user_signed_in?
+```
+
+
+1. 상황설정에 따라 puts에 대한 값이 나오는지 확인
+2. 상황설정 [1] : Like 모델
+* user id값과 post id 값을 둘다 가지고 있는 row와 user id값과 post id 값이 없는 row.
+<br>
+* 로그인한 유저가 Like를 누르면 해당 post_id를 가지고, Like table에는 data가 추가된다.
+
+3. if Like.where(user_id, post_id).first.nil? **(true)**
+* DB에 아무런 정보가 없다 -> 해당 유저는 해당 포스트에 좋아요를 누르지 않았다는 의미
+
+```
+  if Like.where(user_id: current_user.id, post_id: @post.id).first.nil?
+        @result = current_user.likes.create(post_id: @post.id)
+        puts "좋아요"
+```
+like table에는 data가 추가된다. 
+<br>
+4. else
+* DB에 정보가 있다. 다시 한번 Like를 눌렀으므로, 취소된다. 
+
+```
+      else
+        @result = current_user.likes.find_by(post_id: @post.id).destroy
+        puts "좋아요 취소"
+```
+
+### 4. 좋아요/ 좋아요 취소 ui 구현
+
+좋아요를 눌러야 할때는 true라고 설정, 좋아요 취소를 누러야 할 때는 false로, 상황을 구분할 수 있다. 
+<br>
+
+**[좋아요와 좋아요 취소 ui 구현: show.html.erb]**
+
+```html
+<% if @like %>
+  <%= link_to "좋아요", like_post_to_post_path, id: "like_button", class: "btn btn-info" %>
+  <%=@like%>
+<% else %>
+   <%= link_to "좋아요 취소", like_post_to_post_path, id: "like_button", class: "btn btn-danger" %>
+  <%=@like%>
+<% end %>
+```
+1. user가 로그인한 뒤, post에 like를 누를경우, Like table에는 정보가 저장되고, F5를 누르면, 좋아요 취소로 버튼이 바뀐다. 
+<br> 
+2. @like에 true가 담겨있는경우, 좋아요 버튼 <br>
+@like에 false가 담겨있는 경우, 좋아요 취소 버튼이 보여지도록 한다. <br>
+3. user가 로그인한 뒤, post에 like를 누를경우, Like table에는 정보가 저장되고, F5를 누르면, 좋아요 취소로 버튼이 바뀐다. <br>
+dislike버튼을 누르면, table의 정보는 사라지고, F5를 누르면 좋아요 버튼으로 바뀐다.
+4. @like의 값을 확인해보면, 좋아요버튼이 나타날때는 @like == true 값이며, 좋아요 취소 버튼이 나타났을 때는 @like == false 값이다.
+
+
+## 5.좋아요/ 좋아요 취소를 바로 확인할 수 있는 ui 적용
+새로고침을 눌러야지만 event에 대한 반영값을 확인을 할 수 있다는 불편함이 있다. <br>
+자신의 행동을 바로 확인할 수 있는 ui를 구현한다. 
+
+### 1. 좋아요 / 좋아요 취소를 true/false로 구분하여 @result에는 true일때 false일 때 다른 값들이 저장된다는 것을 이용.
+
+<br>
+**[@result.frozen의 변화: posts_controller#like_post]**
+
+```ruby
+      puts @result
+      puts @result.frozen?
+      @result =  @result.frozen?
+```
+1. @result에 create정보가 저장되었을 경우, <br> 
+@result.frozen? 은 false
+2. @result에 destroy정보가 저장되었을 경우, <br>
+@resuslt.frozen?은 true
+<br>
+3. frozen을 활용하여 일어난 이벤트에 대한 구분을 해 준다. 
+@result.frozen? True -> 얼어있다 <br>
+"dislik"가 눌린 상태 -> 버튼은 Like로 바뀐다.
+<br>
+
+**.frozen?**
+> ORM 객체 == DB Row
+> Like.create => DH Row ++ ;
+> like.destroy => DB Row -- ;
+> @post.destroy
+> (if destoryed).frozen? => true / 활성화되어 있지 않다. 
+
+
+**[바로 반영: like_post.js.erb]**
+
+```js
+if(<%= @result %>) {
+    $('#like_button').text("Like").addClass("btn-info").removeClass("btn-danger");
+}
+else{
+    $('#like_button').text("Dislike").addClass("btn-danger").removeClass("btn-info");
+}
+console.log("done");
+$('#like_count').text(<%=@post.likes.count%>);
+```
+1. @result가 true일 경우, table의 row에는 정보가 삭제된 상태이다. <br>
+즉, 원래 Like를 눌렀던 사람이 좋아요를 취소하는 이벤트가 일어났다. <br>
+버튼은 dislike -> like로 바뀐다.
+2. @result가 false일 경우, table의 row에는 새로운 정보가 추가되었다. <br>
+즉, 새로운 User가 새로운 post에 "Like"를 누르는 이벤트가 발생되었다. <br>
+Like를 누르면서, button은 dislike로 바뀌게 된다. 
+<br>
+
+
+### 2. User가 로그인 했을 경우만 좋아요/좋아요 취소를 할 수 있도록 한다. 
+
+**[user_signed_in? : posts_controller#like_post]**
+
+```ruby
+ unless user_signed_in?
       respond_to do |format|
         format.js {render 'please_login.js.erb'}
       end
-    else
-      if Like.where(user_id: current_user.id, post_id: @post.id).first.nil?
-        # 좋아요 누르지 않은 상태에 대한 실행문
-        # 좋아요를 만들어준다.
-        @result = current_user.likes.create(post_id: @post.id)
-        # puts "좋아요 누름"
-      else 
-        # 좋아요를 누른 상태에 대한 실행문
-        # 기존의 좋아요를 삭제한다. 
-        
-        @result = current_user.likes.find_by(post_id: @post.id).destroy
-        # puts "좋아요 취소"    
-      end
-      # puts ("test가 나오나 안나오나")
-      @result = @result.frozen?
-      puts @result
-    end
- 
 ```
-1. 상황설정에 따라 puts에 대한 값이 나오는지 확인
-2. 
 
 
-**[ajax작성]**
-<br>
+# 마무리
 
-```
-ORM 객체 == DB Row
-Like.create => DH Row ++ ;
-like.destroy => DB Row -- ;
-@post.destroy
-frozen =.
-```
+ajax를 사용해 page의 이동을 줄여줌으로써 과부하를 막을 수 있다. 하지만 .. <br>
+facebook을 ajax로 모두 짠다면, 그래도 굉장한 server에 과부하를 주게된다. 따라서 facebook은 또 하나의 A javascript library인 React를 사용하고 있다. <br>
+* facebook은 server단을 단계별로 구분해 놓았다. 
+* 좋아요의 정보가 DB에 저장되지 않는다. 
+React: [https://reactjs.org/](https://reactjs.org/)
+
+### 삭제 버튼을 한번 구현해보자! 

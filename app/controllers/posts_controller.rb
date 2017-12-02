@@ -10,6 +10,10 @@ class PostsController < ApplicationController
   # GET /posts/1
   # GET /posts/1.json
   def show
+    @like = true
+    if user_signed_in?
+      @like = current_user.likes.find_by(post_id: @post.id).nil?
+    end
   end
 
   # GET /posts/new
@@ -74,7 +78,7 @@ class PostsController < ApplicationController
   end
   
   def like_post
-    puts "Like Post Sucess"
+    # puts "Like Post Sucess"
     unless user_signed_in?
       respond_to do |format|
         format.js {render 'please_login.js.erb'}
@@ -82,14 +86,15 @@ class PostsController < ApplicationController
     else
       if Like.where(user_id: current_user.id, post_id: @post.id).first.nil?
         @result = current_user.likes.create(post_id: @post.id)
-        puts "좋아요"
+        # puts "좋아요"
       else
         @result = current_user.likes.find_by(post_id: @post.id).destroy
-        puts "좋아요 취소"
+        # puts "좋아요 취소"
       end
-      puts "test"
-      puts @result.frozen?
-      puts @result
+      # puts "test"
+      # puts @result
+      # puts @result.frozen?
+      @result =  @result.frozen?
     end
   end
 
