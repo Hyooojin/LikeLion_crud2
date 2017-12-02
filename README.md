@@ -551,6 +551,7 @@ Server 콘솔창에 Like Post Sucess가 뜨는 것을 확인할 수 있다. <br>
 ActionView::MissingTemplate
 
 <br>
+
 ### 3. missing template 처리
 
 **[새로만들기: like_post.js.erb]**
@@ -560,12 +561,14 @@ alert("좋아요를 눌렀습니다.")
 ```
 
 <br>
+
 ## 4.좋아요에 대한 정보를Database에 저장한다. 
 좋아요 / 좋아요 취소를 나타낼 수 있다. 
 <br>
 DB에도 해당 유저가 해당 post에 대해새 좋아요를 눌렀는가에 대한 data를 저장하려고 한다. 
 
 <br>
+
 ### 1. 좋아요 모델 만들기
 좋아요 정보는 어떤 유저가 어떤 post에 좋아요를 눌렀는지 저장하기 위함이기때문에 유저정보와 post정보를 지녀야 한다. 
 
@@ -577,6 +580,7 @@ $ rails g model Like user:references post:references
 ```
 
 <br>
+
 ### 2. 모델의 관계 설정
 
 ```ruby
@@ -594,6 +598,7 @@ has_many :likes
 어떤 상황에 Database에 정보를 쌓을지를 지정한다. 
 
 <br>
+
 **[상황 설정: posts_controller.rb]**
 
 ```ruby
@@ -621,6 +626,7 @@ end
 2. 상황설정 [1] : Like 모델
 * user id값과 post id 값을 둘다 가지고 있는 row와 user id값과 post id 값이 없는 row.
 <br>
+
 * 로그인한 유저가 Like를 누르면 해당 post_id를 가지고, Like table에는 data가 추가된다.
 
 3. if Like.where(user_id, post_id).first.nil? **(true)**
@@ -658,6 +664,7 @@ like table에는 data가 추가된다.
   <%=@like%>
 <% end %>
 ```
+
 1. user가 로그인한 뒤, post에 like를 누를경우, Like table에는 정보가 저장되고, F5를 누르면, 좋아요 취소로 버튼이 바뀐다. 
 <br> 
 2. @like에 true가 담겨있는경우, 좋아요 버튼 <br>
@@ -684,14 +691,13 @@ dislike버튼을 누르면, table의 정보는 사라지고, F5를 누르면 좋
 1. @result에 create정보가 저장되었을 경우, <br> 
 @result.frozen? 은 false
 2. @result에 destroy정보가 저장되었을 경우, <br>
-@resuslt.frozen?은 true
-<br>
+@resuslt.frozen?은 true <br>
 3. frozen을 활용하여 일어난 이벤트에 대한 구분을 해 준다. 
 @result.frozen? True -> 얼어있다 <br>
 "dislik"가 눌린 상태 -> 버튼은 Like로 바뀐다.
 <br>
 
-**.frozen?**
+> **frozen이란? .frozen?** <br>
 > ORM 객체 == DB Row
 > Like.create => DH Row ++ ;
 > like.destroy => DB Row -- ;
@@ -739,5 +745,7 @@ facebook을 ajax로 모두 짠다면, 그래도 굉장한 server에 과부하를
 * facebook은 server단을 단계별로 구분해 놓았다. 
 * 좋아요의 정보가 DB에 저장되지 않는다. 
 React: [https://reactjs.org/](https://reactjs.org/)
+
+<br>
 
 ### 삭제 버튼을 한번 구현해보자! 
